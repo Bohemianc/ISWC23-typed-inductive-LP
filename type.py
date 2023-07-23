@@ -45,28 +45,6 @@ def get_domain_and_range(fn_dr, fn_ent2type, fn_type, relation2id):
     return rel_doms, rel_rans, ont_edges, len(type2id)
 
 
-def sample_neg(rel_doms, rel_rans, num_types, ont_edges):
-    neg_rel_doms = rel_doms.copy()
-    neg_rel_rans = rel_rans.copy()
-
-    num_rel = len(rel_doms)
-    for r in range(num_rel):
-        for i in range(len(rel_doms[r])):
-            dom, ran = rel_doms[r][i], rel_rans[r][i]
-            if np.random.uniform() < 0.5:
-                neg_dom = random.randint(0, num_types - 1)
-                while neg_dom == dom or (neg_dom, r, ran) in ont_edges:
-                    neg_dom = random.randint(0, num_types - 1)
-                neg_rel_doms[r][i] = neg_dom
-            else:
-                neg_ran = random.randint(0, num_types - 1)
-                while neg_ran == ran or (dom, r, neg_ran) in ont_edges:
-                    neg_ran = random.randint(0, num_types - 1)
-                neg_rel_rans[r][i] = neg_ran
-
-    return neg_rel_doms, neg_rel_rans
-
-
 def get_ent_types(fn, ent2id, type2id):
     # print(len(ent2id))
     # print(ent2id.values())

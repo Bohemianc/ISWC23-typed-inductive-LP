@@ -164,7 +164,6 @@ if __name__ == '__main__':
     parser.add_argument("--margin_o", type=float, default=10,
                         help="The margin between positive and negative samples in the max-margin loss")
     parser.add_argument('--ont', action='store_true')
-    parser.add_argument('--type_graph', '-tg', action='store_true')
 
     params = parser.parse_args()
     initialize_experiment(params)

@@ -25,7 +25,23 @@ lmdb
 `expri_save_models`: The trained models to generate experimental results in the paper.
 
 ## Run
-
+We provide the commands to train and test our model, and the illustration of their parameters. Take `nell_v1` for example.
 + training
-+ inference
+  `python train.py -d nell_v1 -e nell_v1 -ne 20 --ont`
+  + `-d`: the name of training dataset
+  + `-e`: the directory of saved models
+  + `-ne`: the number of epoches
+  + `--ont`: type-enhanced model
++ test on `AUC-PR`
+  `python test_auc.py -d nell_v1_ind -e nell_v1 --ont --runs 5`
+  + `-d`: the name of test dataset
+  + `-e`: the directory of saved models
+  + `--ont`: type-enhanced model
+  + `--runs`: run times
+  
++ test on `Hits@10`
+  `python test_ranking.py -d nell_v1_ind -e nell_v1 --ont`
+  + `-d`: the name of test dataset
+  + `-e`: the directory of saved models
+  + `--ont`: type-enhanced model
 

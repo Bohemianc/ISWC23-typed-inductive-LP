@@ -63,7 +63,7 @@ def main(params):
             with open(type2id_path) as f:
                 type2id = json.load(f)
             params.num_types = len(type2id)
-            ent2types = get_ent_types(f'{params.main_dir}/../types/{dataset_prefix}_ent2type_0708_23.txt',
+            ent2types = get_ent_types(f'{params.main_dir}/../types/{dataset_prefix}_ent2type_top.txt',
                                       test.entity2id, type2id)
             ent2types = np.array(ent2types, dtype=object)
 
