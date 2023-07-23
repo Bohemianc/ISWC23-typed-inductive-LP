@@ -16,7 +16,8 @@ from sklearn import metrics
 
 
 class Trainer():
-    def __init__(self, params, graph_classifier, train, ent2types=None, class_hier=None, type_scorer=None, full_g=None, full_rel_labels=None,
+    def __init__(self, params, graph_classifier, train, ent2types=None, class_hier=None, type_scorer=None, full_g=None,
+                 full_rel_labels=None,
                  ont_scorer=None, valid_evaluator=None):
         self.graph_classifier = graph_classifier
         self.valid_evaluator = valid_evaluator
@@ -34,9 +35,9 @@ class Trainer():
 
         model_params = list(self.graph_classifier.parameters())
         if params.ont:
-            model_params+= list(self.ont_scorer.parameters())
+            model_params += list(self.ont_scorer.parameters())
         if params.type_graph:
-            model_params+=list(self.type_scorer.parameters())
+            model_params += list(self.type_scorer.parameters())
         print('Total number of parameters: %d' % sum(map(lambda x: x.numel(), model_params)))
 
         if params.optimizer == "SGD":

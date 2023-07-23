@@ -3,94 +3,6 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
-from dgl.nn.pytorch import RelGraphConv
-
-
-class RGCN(nn.Module):
-    def __init__(self, num_nodes, h_dim, num_rels):
-        super().__init__()
-
-        self.conv1 = RelGraphConv(h_dim, h_dim, num_rels, regularizer='bdd',
-                                  num_bases=4, self_loop=True)
-        self.conv2 = RelGraphConv(h_dim, h_dim, num_rels, regularizer='bdd',
-                                  num_bases=4, self_loop=True)
-        self.dropout = nn.Dropout(0.2)
-
-    def forward(self, g, x, etypes):
-        # x = self.emb(nids)
-        # print(x.shape)
-        h = F.relu(self.conv1(g, x, etypes))  # g.edata['norm']))  # norm?
-        h = self.dropout(h)
-        h = F.relu(self.conv2(g, h, etypes))  # g.edata['norm'])
-        return self.dropout(h)
-
-
-class TypeScorer(nn.Module):
-    def __init__(self, params, ent2types, tt2ids, pos2neg=None, is_test=False, old_ttids=None):
-        super().__init__()
-
-        self.params = params
-        self.ent2types = ent2types
-        self.tt2ids = tt2ids
-        self.pos2neg = pos2neg
-
-        self.gnn = RGCN(params.num_tg_nodes, params.type_emb_dim, params.num_tg_rels)
-        self.fc = nn.Linear(params.type_emb_dim, 1)
-        self.activation = torch.relu
-
-        self.is_test = is_test
-        self.old_ttids = old_ttids
-        self.tt_emb = nn.Embedding(params.num_tg_nodes, params.type_emb_dim)
-
-    def forward(self, data, full_g, full_rel_labels):
-        nids = torch.tensor(self.get_nids(data))
-        if not self.is_test:
-            x = self.tt_emb(torch.arange(self.params.num_tg_nodes).to(device=self.params.device))
-        else:
-            x = self.tt_emb(torch.tensor(self.old_ttids).to(device=self.params.device))
-
-        # if train, nids will not contain -1
-        out = torch.zeros(len(nids), device=self.params.device)
-        tmp = self.activation(self.fc(self.gnn(full_g, x, full_rel_labels)))
-        for i in range(len(nids)):
-            if nids[i] != -1:
-                out[i] = tmp[nids[i]]
-        # print(out.shape)
-        return out
-
-    def get_nids(self, data):
-        g, _, rel_labels = data
-        head_ids = np.array((g.ndata['id'] == 1).nonzero().squeeze(1).cpu())
-        tail_ids = np.array((g.ndata['id'] == 2).nonzero().squeeze(1).cpu())
-        head_eids = g.ndata['eid'][head_ids].cpu()
-        tail_eids = g.ndata['eid'][tail_ids].cpu()
-
-        # print(head_eids)
-        head_types = [item[0] for item in self.ent2types[head_eids]]
-        tail_types = [item[0] for item in self.ent2types[tail_eids]]
-
-        nids = []
-        for c_h, r, c_t in zip(head_types, rel_labels, tail_types):
-            if (c_h, int(r), c_t) in self.tt2ids:
-                nids.append(self.tt2ids[(c_h, int(r), c_t)])
-            else:
-                nids.append(-1)
-        return torch.tensor(nids)
-
-    def loss(self, data_pos):
-        crit = torch.nn.BCELoss()
-        nids_pos = self.get_nids(data_pos)
-        nids_neg = self.pos2neg[nids_pos]
-
-        score_pos = self.forward(nids_pos)
-        score_neg = self.forward(nids_neg)
-
-        device = score_pos.device
-        target_pos = torch.tensor([1.]).to(device).repeat(len(score_pos))
-        target_neg = torch.tensor([0.]).to(device).repeat(len(score_neg))
-        return crit(torch.cat((score_pos, score_neg)),
-                    torch.cat(target_pos, target_neg))
-
 
 class GraphClassifier(nn.Module):
     def __init__(self, params, relation2id):  # in_dim, h_dim, rel_emb_dim, out_dim, num_rels, num_bases):
@@ -369,26 +281,9 @@ class TransE(nn.Module):
     def forward(self, data, ent2types):
         g, _, rel_labels = data
         num_rels = len(rel_labels)
-        # if not is_eval:
-        #     rel2doms = np.array(rel2doms)
-        #     rel2rans = np.array(rel2rans)
-        #     # rel_labels=np.array(rel_labels)
-        #     doms = rel2doms[rel_labels.cpu()].tolist()
-        #     rans = rel2rans[rel_labels.cpu()].tolist()
-        #     num_domains = [len(x) for x in doms]
-        #
-        #     flat_doms = self.type_emb(torch.LongTensor([x for li in doms for x in li]).to(self.params.device))
-        #     flat_rels = rel_emb(
-        #         torch.LongTensor([rel_labels[i] for i in range(num_rels) for _ in range(num_domains[i])]).to(
-        #             self.params.device))
-        #     flat_rans = self.type_emb(torch.LongTensor([x for li in rans for x in li]).to(self.params.device))
-        #
-        #     return - torch.sum(torch.pow(flat_doms + flat_rels - flat_rans, 2), dim=1)
-        #
-        # else:
+
         ent2types = np.array(ent2types, dtype=object)
-        # head_ids = np.array([triplets[i][0] for i in range(len(triplets))], dtype=np.int)
-        # tail_ids = np.array([triplets[i][1] for i in range(len(triplets))], dtype=np.int)
+
         head_ids = np.array((g.ndata['id'] == 1).nonzero().squeeze(1).cpu())
         tail_ids = np.array((g.ndata['id'] == 2).nonzero().squeeze(1).cpu())
         head_eids = g.ndata['eid'][head_ids].cpu()

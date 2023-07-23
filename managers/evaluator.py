@@ -8,7 +8,8 @@ from torch.utils.data import DataLoader
 
 
 class Evaluator():
-    def __init__(self, params, graph_classifier, data, ont_scorer=None, ent2types=None, type_scorer=None, full_g=None, full_rel_labels=None):
+    def __init__(self, params, graph_classifier, data, ont_scorer=None, ent2types=None, type_scorer=None, full_g=None,
+                 full_rel_labels=None):
         self.params = params
         self.graph_classifier = graph_classifier
         self.data = data
